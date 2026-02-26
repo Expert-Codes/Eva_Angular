@@ -1,7 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-cairo: 'Cairo', sans-serif;
+  --font-sans: 'Inter', 'Cairo', sans-serif;
+}
 
 :root {
   --primary: hsl(42, 80%, 45%);
