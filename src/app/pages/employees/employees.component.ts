@@ -29,7 +29,7 @@ import { Employee, ServiceType } from '../../models/data.models';
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (emp of ds.employees(); track emp.id) {
           <div class="card-glass rounded-xl p-5 hover:border-yellow-300 transition-all animate-fade-in">
-            <!-- Card Header: avatar + name + edit -->
+            <!-- Header -->
             <div class="flex items-start justify-between mb-3">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
@@ -39,7 +39,6 @@ import { Employee, ServiceType } from '../../models/data.models';
                   <p class="text-xs text-gray-400">{{ emp.role }}</p>
                 </div>
               </div>
-              <!-- Edit button -->
               <button (click)="openEdit(emp)"
                       class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       [title]="lang.t('تعديل', 'Edit')">✏️</button>
@@ -66,17 +65,20 @@ import { Employee, ServiceType } from '../../models/data.models';
                 <span class="font-bold" style="color:hsl(42,80%,45%)">{{ emp.totalEvents }}</span>
               </div>
 
-              <!-- Resend evaluation link button — always visible if email set -->
-              @if (emp.email) {
-                <button (click)="resend(emp)"
-                        class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-semibold transition-colors"
-                        style="border-color:hsl(210,80%,55%); color:hsl(210,80%,45%)"
-                        [class.opacity-60]="sending() === emp.id"
-                        [disabled]="sending() === emp.id">
-                  <span>📧</span>
-                  <span class="font-cairo">{{ sending() === emp.id ? lang.t('جاري الإرسال...', 'Sending...') : lang.t('إرسال رابط التقييم', 'Send Evaluation Link') }}</span>
-                </button>
-              }
+              <!-- Resend / Generate evaluation link — always visible -->
+              <button (click)="generateLink(emp)"
+                      class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-semibold transition-all"
+                      style="border-color:hsl(210,80%,55%); color:hsl(210,80%,45%)"
+                      [class.opacity-60]="sending() === emp.id"
+                      [disabled]="sending() === emp.id">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                <span class="font-cairo">
+                  {{ sending() === emp.id ? lang.t('جاري الإنشاء...', 'Generating...') : lang.t('رابط التقييم', 'Evaluation Link') }}
+                </span>
+              </button>
             </div>
           </div>
         }
@@ -98,7 +100,7 @@ import { Employee, ServiceType } from '../../models/data.models';
 
           <div class="space-y-1">
             <input [(ngModel)]="form.email" type="email" [placeholder]="lang.t('البريد الإلكتروني', 'Email Address')" class="input-field w-full"/>
-            <p class="text-xs text-gray-400 font-cairo">{{ lang.t('سيتم إرسال رابط التقييم عند تعيينه كمدير', 'Evaluation link will be sent when assigned as manager') }}</p>
+            <p class="text-xs text-gray-400 font-cairo">{{ lang.t('إذا تم إدخاله، سيُرسل الرابط بالبريد تلقائياً', 'If provided, the link will also be emailed') }}</p>
           </div>
 
           <input [(ngModel)]="form.joinDate" type="date" class="input-field w-full"/>
@@ -132,10 +134,42 @@ import { Employee, ServiceType } from '../../models/data.models';
       </div>
     }
 
-    <!-- Toast -->
-    @if (toast()) {
-      <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm font-cairo px-5 py-3 rounded-xl shadow-xl z-50">
-        {{ toast() }}
+    <!-- Link Modal -->
+    @if (linkModal()) {
+      <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4" [attr.dir]="lang.isAr ? 'rtl' : 'ltr'">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl">✓</div>
+            <div>
+              <h3 class="font-cairo font-bold text-gray-800">{{ lang.t('رابط التقييم جاهز', 'Evaluation Link Ready') }}</h3>
+              <p class="text-xs text-gray-400">{{ lang.t('صالح لمدة 7 أيام', 'Valid for 7 days') }}</p>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+            <p class="text-xs text-gray-400 font-cairo">{{ lang.t('انسخ الرابط وأرسله للموظف', 'Copy and send this link to the employee') }}</p>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-blue-700 break-all flex-1 select-all font-mono bg-blue-50 p-2 rounded-lg">{{ linkModal() }}</span>
+              <button (click)="copyLink()" class="shrink-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                      [style]="copied() ? 'background:#16a34a;color:white' : 'background:hsl(42,80%,45%);color:white'">
+                {{ copied() ? lang.t('تم النسخ ✓', 'Copied ✓') : lang.t('نسخ', 'Copy') }}
+              </button>
+            </div>
+          </div>
+
+          @if (linkEmpHasEmail()) {
+            <p class="text-xs text-gray-400 font-cairo flex items-center gap-1">
+              <span>📧</span>
+              <span>{{ lang.t('تم إرسال الرابط أيضاً بالبريد الإلكتروني', 'The link was also sent by email') }}</span>
+            </p>
+          }
+
+          <button (click)="closeLinkModal()"
+                  class="w-full py-2 rounded-xl font-cairo font-semibold text-white text-sm"
+                  style="background:hsl(42,80%,45%)">
+            {{ lang.t('إغلاق', 'Close') }}
+          </button>
+        </div>
       </div>
     }
   `,
@@ -151,7 +185,9 @@ export class EmployeesComponent {
   sending    = signal<string | null>(null);
   feedback   = signal('');
   feedbackOk = signal(false);
-  toast      = signal('');
+  linkModal  = signal<string | null>(null);
+  linkEmpHasEmail = signal(false);
+  copied     = signal(false);
 
   form = this.emptyForm();
 
@@ -202,22 +238,32 @@ export class EmployeesComponent {
     }
   }
 
-  async resend(emp: Employee) {
+  async generateLink(emp: Employee) {
     this.sending.set(emp.id);
     try {
-      await this.ds.resendToken(emp.id);
-      this.showToast(this.lang.t('تم إرسال رابط التقييم بنجاح ✓', 'Evaluation link sent successfully ✓'));
+      const res = await this.ds.resendToken(emp.id);
+      const origin = window.location.origin;
+      const link = `${origin}/access/${res.token}`;
+      this.linkEmpHasEmail.set(!!emp.email);
+      this.linkModal.set(link);
+      this.copied.set(false);
     } catch {
-      this.showToast(this.lang.t('فشل إرسال الرابط — تحقق من البريد الإلكتروني', 'Failed to send — check email address'));
+      alert(this.lang.t('حدث خطأ أثناء إنشاء الرابط', 'Failed to generate link'));
     } finally {
       this.sending.set(null);
     }
   }
 
-  showToast(msg: string) {
-    this.toast.set(msg);
-    setTimeout(() => this.toast.set(''), 3500);
+  copyLink() {
+    const link = this.linkModal();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    });
   }
+
+  closeLinkModal() { this.linkModal.set(null); }
 
   closeDialog() {
     this.showDialog.set(false);
