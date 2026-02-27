@@ -36,9 +36,17 @@ import { ServiceType } from '../../models/data.models';
             <div class="space-y-3">
               <app-service-badge [type]="emp.specialization"/>
               <app-rating-stars [rating]="emp.avgRating" size="sm"/>
-              <div class="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-100">
-                <span>📅 {{ emp.joinDate }}</span>
-                <span>📞 {{ emp.phone }}</span>
+              <div class="space-y-1 pt-2 border-t border-gray-100 text-xs text-gray-400">
+                <div class="flex items-center justify-between">
+                  <span>📅 {{ emp.joinDate }}</span>
+                  <span>📞 {{ emp.phone }}</span>
+                </div>
+                @if (emp.email) {
+                  <div class="flex items-center gap-1">
+                    <span>📧</span>
+                    <span class="truncate">{{ emp.email }}</span>
+                  </div>
+                }
               </div>
               <div class="flex items-center justify-between text-xs">
                 <span class="text-gray-400">الفعاليات المشارك فيها</span>
@@ -51,14 +59,22 @@ import { ServiceType } from '../../models/data.models';
     </div>
 
     @if (showDialog()) {
-      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 space-y-4" dir="rtl">
+      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 space-y-4 my-4" dir="rtl">
           <h2 class="font-cairo font-bold text-lg">إضافة موظف جديد</h2>
+
           <input [(ngModel)]="form.name" placeholder="الاسم بالإنجليزية" class="input-field w-full"/>
           <input [(ngModel)]="form.nameAr" placeholder="الاسم بالعربية" class="input-field w-full"/>
           <input [(ngModel)]="form.role" placeholder="المنصب" class="input-field w-full"/>
           <input [(ngModel)]="form.phone" placeholder="رقم الهاتف" class="input-field w-full"/>
+
+          <div class="space-y-1">
+            <input [(ngModel)]="form.email" type="email" placeholder="البريد الإلكتروني (اختياري)" class="input-field w-full"/>
+            <p class="text-xs text-gray-400 font-cairo">سيتم إرسال رابط التقييم تلقائياً عند تعيينه كمدير</p>
+          </div>
+
           <input [(ngModel)]="form.joinDate" type="date" class="input-field w-full"/>
+
           <select [(ngModel)]="form.specialization" class="input-field w-full">
             <option value="security_management">إدارة الأمن</option>
             <option value="crowd_management">إدارة الحشود</option>
@@ -69,25 +85,43 @@ import { ServiceType } from '../../models/data.models';
             <option value="close_protection">الحماية الشخصية</option>
             <option value="international_security">الأمن الدولي</option>
           </select>
-          <div class="flex gap-3 justify-end">
-            <button (click)="showDialog.set(false)" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">إلغاء</button>
-            <button (click)="submit()" class="px-4 py-2 text-sm text-white rounded-lg font-cairo font-bold" style="background:hsl(42,80%,45%)">حفظ</button>
+
+          <div class="flex gap-3 justify-end pt-2">
+            <button (click)="closeDialog()" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">إلغاء</button>
+            <button (click)="submit()" [disabled]="!form.name || !form.nameAr"
+                    class="px-4 py-2 text-sm text-white rounded-lg font-cairo font-bold disabled:opacity-50"
+                    style="background:hsl(42,80%,45%)">حفظ</button>
           </div>
         </div>
       </div>
     }
   `,
-  styles: [`.input-field { border:1px solid #e5e7eb; border-radius:0.5rem; padding:0.5rem 0.75rem; font-size:0.875rem; font-family:'Cairo',sans-serif; outline:none; } .input-field:focus { border-color:hsl(42,80%,45%); }`]
+  styles: [`.input-field { border:1px solid #e5e7eb; border-radius:0.5rem; padding:0.5rem 0.75rem; font-size:0.875rem; font-family:'Cairo',sans-serif; outline:none; width:100%; } .input-field:focus { border-color:hsl(42,80%,45%); }`]
 })
 export class EmployeesComponent {
   ds = inject(DataService);
   showDialog = signal(false);
-  form = { name:'', nameAr:'', role:'', phone:'', joinDate:'', specialization:'security_management' as ServiceType };
+  form = this.emptyForm();
+
+  emptyForm() {
+    return {
+      name: '', nameAr: '', role: '', phone: '', email: '', joinDate: '',
+      specialization: 'security_management' as ServiceType,
+      avatar: '',
+    };
+  }
 
   async submit() {
     if (!this.form.name || !this.form.nameAr) return;
-    await this.ds.addEmployee({ ...this.form, avatar: this.form.nameAr.substring(0,2) });
+    if (!this.form.avatar) {
+      this.form.avatar = this.form.nameAr.split(' ').map(w => w[0]).join('').slice(0, 2);
+    }
+    await this.ds.addEmployee(this.form);
+    this.closeDialog();
+  }
+
+  closeDialog() {
     this.showDialog.set(false);
-    this.form = { name:'', nameAr:'', role:'', phone:'', joinDate:'', specialization:'security_management' };
+    this.form = this.emptyForm();
   }
 }
