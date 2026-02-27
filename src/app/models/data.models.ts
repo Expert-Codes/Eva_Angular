@@ -44,7 +44,8 @@ export interface Employee {
   role: string;
   specialization: ServiceType;
   avatar: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   joinDate: string;
   avgRating: number;
   totalEvents: number;
@@ -102,4 +103,10 @@ export interface Evaluation {
   criteria: EvaluationCriteria;
   overallRating: number;
   notes: string;
+}
+
+export interface TokenAccess {
+  employee: Employee;
+  events: EventData[];
+  expiresAt: string;
 }
