@@ -38,9 +38,26 @@ export class DataService {
     this.employees.update(list => [created!, ...list]);
   }
 
+  async updateEmployee(id: string, emp: Partial<Employee>) {
+    const updated = await firstValueFrom(this.http.put<Employee>(`${this.BASE}/employees/${id}`, emp));
+    this.employees.update(list => list.map(e => e.id === id ? updated! : e));
+  }
+
+  async resendToken(employeeId: string): Promise<string> {
+    const res = await firstValueFrom(
+      this.http.post<{ message: string }>(`${this.BASE}/employees/${employeeId}/resend-token`, {})
+    );
+    return res?.message ?? '';
+  }
+
   async addEvent(evt: Omit<EventData, 'id' | 'services'>) {
     const created = await firstValueFrom(this.http.post<EventData>(`${this.BASE}/events`, evt));
     this.events.update(list => [created!, ...list]);
+  }
+
+  async updateEvent(id: string, evt: Partial<Omit<EventData, 'id' | 'services'>>) {
+    const updated = await firstValueFrom(this.http.put<EventData>(`${this.BASE}/events/${id}`, evt));
+    this.events.update(list => list.map(e => e.id === id ? updated! : e));
   }
 
   async addServiceToEvent(eventId: string, service: Omit<EventService, 'id'>) {
