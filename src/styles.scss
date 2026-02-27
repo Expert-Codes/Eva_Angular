@@ -1,10 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
-
-@theme {
-  --font-cairo: 'Cairo', sans-serif;
-  --font-sans: 'Inter', 'Cairo', sans-serif;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --primary: hsl(42, 80%, 45%);
@@ -14,8 +11,6 @@
   --secondary: hsl(220, 16%, 93%);
   --muted-foreground: hsl(220, 10%, 45%);
   --border: hsl(220, 14%, 88%);
-  --sidebar-bg: hsl(0, 0%, 100%);
-  --sidebar-border: hsl(220, 14%, 90%);
   --card-bg: hsl(0, 0%, 100%);
   --success: hsl(150, 60%, 40%);
 }
@@ -55,7 +50,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-item.active {
-  background: hsl(42, 80%, 45%, 0.15);
+  background: rgba(180, 130, 30, 0.15);
   color: var(--primary);
   font-weight: 600;
 }
