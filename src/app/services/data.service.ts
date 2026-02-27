@@ -43,11 +43,11 @@ export class DataService {
     this.employees.update(list => list.map(e => e.id === id ? updated! : e));
   }
 
-  async resendToken(employeeId: string): Promise<string> {
+  async resendToken(employeeId: string): Promise<{ message: string; token: string }> {
     const res = await firstValueFrom(
-      this.http.post<{ message: string }>(`${this.BASE}/employees/${employeeId}/resend-token`, {})
+      this.http.post<{ message: string; token: string }>(`${this.BASE}/employees/${employeeId}/resend-token`, {})
     );
-    return res?.message ?? '';
+    return res!;
   }
 
   async addEvent(evt: Omit<EventData, 'id' | 'services'>) {
