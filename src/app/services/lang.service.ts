@@ -4,7 +4,7 @@ export type Lang = 'ar' | 'en';
 
 @Injectable({ providedIn: 'root' })
 export class LangService {
-  lang = signal<Lang>((localStorage.getItem('eva_lang') as Lang) ?? 'ar');
+  lang = signal<Lang>((localStorage.getItem('eva_lang') as Lang) ?? 'en');
 
   constructor() {
     effect(() => {
