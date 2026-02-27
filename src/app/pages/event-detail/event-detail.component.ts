@@ -6,7 +6,7 @@ import { DataService } from '../../services/data.service';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ServiceBadgeComponent } from '../../components/service-badge/service-badge.component';
 import { RatingStarsComponent } from '../../components/rating-stars/rating-stars.component';
-import { CRITERIA_LABELS, ServiceType } from '../../models/data.models';
+import { CRITERIA_LABELS, ServiceType, EventService } from '../../models/data.models';
 
 @Component({
   selector: 'app-event-detail',
@@ -19,6 +19,7 @@ import { CRITERIA_LABELS, ServiceType } from '../../models/data.models';
       </div>
 
       @if (event()) {
+        <!-- Event Header -->
         <div class="card-glass rounded-xl p-5">
           <div class="flex items-start justify-between mb-4">
             <div>
@@ -30,24 +31,70 @@ import { CRITERIA_LABELS, ServiceType } from '../../models/data.models';
             </div>
             <span class="text-xs bg-gray-100 px-3 py-1 rounded-md text-gray-500">{{ event()!.client }}</span>
           </div>
-          <div class="flex gap-6 text-sm text-gray-400">
+          <div class="flex flex-wrap gap-6 text-sm text-gray-400">
             <span>📍 {{ event()!.location }}</span>
             <span>📅 {{ event()!.startDate }} → {{ event()!.endDate }}</span>
-            <span *ngIf="event()!.managerName">👤 مدير الفعالية: {{ event()!.managerName }}</span>
+            <span *ngIf="event()!.managerName">👤 مدير الفعالية: <span class="text-gray-700 font-medium">{{ event()!.managerName }}</span></span>
           </div>
         </div>
 
+        <!-- Services -->
         @for (service of event()!.services; track service.id) {
-          <div class="card-glass rounded-xl p-5">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <app-service-badge [type]="service.type"/>
-                <app-status-badge [status]="service.status"/>
+          <div class="card-glass rounded-xl overflow-hidden">
+
+            <!-- Service Summary Header -->
+            <div class="p-5 border-b border-gray-100">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <app-service-badge [type]="service.type"/>
+                  <app-status-badge [status]="service.status"/>
+                </div>
+                <p class="text-sm text-gray-400 font-cairo">
+                  مدير المشروع: <span class="text-gray-700 font-medium">{{ service.projectManagerName }}</span>
+                </p>
               </div>
-              <p class="text-sm text-gray-400 font-cairo">مدير المشروع: <span class="text-gray-700 font-medium">{{ service.projectManagerName }}</span></p>
+
+              <!-- Summary Stats -->
+              <div class="grid grid-cols-3 gap-3">
+                <!-- Total Employees -->
+                <div class="rounded-lg p-3 text-center" style="background:hsl(42,80%,45%,0.08)">
+                  <p class="text-2xl font-cairo font-bold" style="color:hsl(42,80%,45%)">{{ service.employeeIds.length }}</p>
+                  <p class="text-xs text-gray-500 font-cairo mt-1">إجمالي الموظفين</p>
+                </div>
+
+                <!-- Evaluated -->
+                <div class="rounded-lg p-3 text-center" style="background:hsl(150,60%,40%,0.08)">
+                  <p class="text-2xl font-cairo font-bold" style="color:hsl(150,60%,40%)">{{ getEvaluatedCount(service) }}</p>
+                  <p class="text-xs text-gray-500 font-cairo mt-1">تم تقييمهم</p>
+                </div>
+
+                <!-- Average Rating -->
+                <div class="rounded-lg p-3 text-center" style="background:hsl(220,80%,55%,0.08)">
+                  <p class="text-2xl font-cairo font-bold" style="color:hsl(220,80%,55%)">
+                    {{ getServiceAvgRating(service) > 0 ? getServiceAvgRating(service) : '—' }}
+                  </p>
+                  <p class="text-xs text-gray-500 font-cairo mt-1">متوسط التقييم</p>
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              @if (service.employeeIds.length > 0) {
+                <div class="mt-4 space-y-1">
+                  <div class="flex justify-between text-xs text-gray-400 font-cairo">
+                    <span>نسبة التقييم</span>
+                    <span>{{ getEvaluatedCount(service) }}/{{ service.employeeIds.length }}</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="h-2 rounded-full transition-all duration-500"
+                         style="background:hsl(42,80%,45%); width:{{ getEvalPercent(service) }}%"></div>
+                  </div>
+                </div>
+              }
             </div>
 
-            <div class="space-y-3">
+            <!-- Employee List -->
+            <div class="p-5 space-y-3">
+              <p class="font-cairo font-semibold text-sm text-gray-600 mb-3">الموظفون</p>
               @for (empId of service.employeeIds; track empId) {
                 @if (getEmployee(empId)) {
                   <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">
@@ -60,7 +107,10 @@ import { CRITERIA_LABELS, ServiceType } from '../../models/data.models';
                       </div>
                     </div>
                     @if (getEvaluation(empId, service.type)) {
-                      <app-rating-stars [rating]="getEvaluation(empId, service.type)!.overallRating" size="sm"/>
+                      <div class="flex items-center gap-2">
+                        <app-rating-stars [rating]="getEvaluation(empId, service.type)!.overallRating" size="sm"/>
+                        <span class="text-xs text-gray-400 font-cairo">{{ getEvaluation(empId, service.type)!.overallRating }}/5</span>
+                      </div>
                     } @else {
                       <button (click)="startEval(empId, service.type)"
                               class="px-3 py-1.5 text-xs text-white rounded-lg font-cairo font-semibold" style="background:hsl(42,80%,45%)">
@@ -74,6 +124,7 @@ import { CRITERIA_LABELS, ServiceType } from '../../models/data.models';
           </div>
         }
 
+        <!-- Evaluation Dialog -->
         @if (evalTarget()) {
           <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4">
             <div class="bg-white rounded-xl p-6 w-full max-w-2xl space-y-4 my-4" dir="rtl">
@@ -114,8 +165,27 @@ export class EventDetailComponent {
   criteriaLabels = CRITERIA_LABELS;
 
   getEmployee(id: string) { return this.ds.employees().find(e => e.id === id); }
+
   getEvaluation(empId: string, serviceType: string) {
     return this.ds.evaluations().find(ev => ev.eventId === this.eventId && ev.employeeId === empId && ev.serviceType === serviceType);
+  }
+
+  getEvaluatedCount(service: EventService): number {
+    return service.employeeIds.filter(id => this.getEvaluation(id, service.type)).length;
+  }
+
+  getServiceAvgRating(service: EventService): number {
+    const evals = service.employeeIds
+      .map(id => this.getEvaluation(id, service.type))
+      .filter(ev => ev != null);
+    if (!evals.length) return 0;
+    const avg = evals.reduce((sum, ev) => sum + ev!.overallRating, 0) / evals.length;
+    return Math.round(avg * 10) / 10;
+  }
+
+  getEvalPercent(service: EventService): number {
+    if (!service.employeeIds.length) return 0;
+    return Math.round((this.getEvaluatedCount(service) / service.employeeIds.length) * 100);
   }
 
   startEval(employeeId: string, serviceType: ServiceType) { this.evalTarget.set({ employeeId, serviceType }); }
