@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ServiceBadgeComponent } from '../../components/service-badge/service-badge.component';
+import { Employee } from '../../models/data.models';
 
 @Component({
   selector: 'app-events',
@@ -36,7 +37,9 @@ import { ServiceBadgeComponent } from '../../components/service-badge/service-ba
               </div>
               <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-md">{{ event.client }}</span>
             </div>
-            <p *ngIf="event.managerName" class="text-sm text-gray-500 mb-3 font-cairo">مدير الفعالية: <span class="text-gray-800 font-medium">{{ event.managerName }}</span></p>
+            <p *ngIf="event.managerName" class="text-sm text-gray-500 mb-3 font-cairo">
+              👤 مدير الفعالية: <span class="text-gray-800 font-medium">{{ event.managerName }}</span>
+            </p>
             <div class="flex items-center gap-6 text-sm text-gray-400 mb-4">
               <span>📍 {{ event.location }}</span>
               <span>📅 {{ event.startDate }} → {{ event.endDate }}</span>
@@ -59,25 +62,45 @@ import { ServiceBadgeComponent } from '../../components/service-badge/service-ba
     </div>
 
     @if (showDialog()) {
-      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4 space-y-4" dir="rtl">
+      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4 space-y-4 my-4" dir="rtl">
           <h2 class="font-cairo font-bold text-lg">إضافة فعالية جديدة</h2>
+
           <input [(ngModel)]="form.name" placeholder="اسم الفعالية بالإنجليزية" class="input-field w-full"/>
           <input [(ngModel)]="form.nameAr" placeholder="اسم الفعالية بالعربية" class="input-field w-full"/>
           <input [(ngModel)]="form.location" placeholder="الموقع" class="input-field w-full"/>
           <input [(ngModel)]="form.client" placeholder="العميل" class="input-field w-full"/>
+
           <div class="grid grid-cols-2 gap-3">
             <input [(ngModel)]="form.startDate" type="date" class="input-field w-full"/>
             <input [(ngModel)]="form.endDate" type="date" class="input-field w-full"/>
           </div>
+
           <select [(ngModel)]="form.status" class="input-field w-full">
             <option value="upcoming">قادم</option>
             <option value="active">نشط</option>
             <option value="completed">مكتمل</option>
           </select>
-          <div class="flex gap-3 justify-end">
-            <button (click)="showDialog.set(false)" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">إلغاء</button>
-            <button (click)="submit()" class="px-4 py-2 text-sm text-white rounded-lg font-cairo font-bold" style="background:hsl(42,80%,45%)">حفظ</button>
+
+          <!-- Event Manager Dropdown -->
+          <div class="space-y-1">
+            <label class="text-sm text-gray-500 font-cairo">مدير الفعالية</label>
+            <select (change)="onManagerChange($event)" class="input-field w-full">
+              <option value="">-- اختر مدير الفعالية --</option>
+              @for (emp of ds.employees(); track emp.id) {
+                <option [value]="emp.id">{{ emp.nameAr }} — {{ emp.role }}</option>
+              }
+            </select>
+            @if (form.managerName) {
+              <p class="text-xs font-cairo" style="color:hsl(42,80%,45%)">✓ تم اختيار: {{ form.managerName }}</p>
+            }
+          </div>
+
+          <div class="flex gap-3 justify-end pt-2">
+            <button (click)="closeDialog()" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">إلغاء</button>
+            <button (click)="submit()" [disabled]="!form.name || !form.nameAr"
+                    class="px-4 py-2 text-sm text-white rounded-lg font-cairo font-bold disabled:opacity-50"
+                    style="background:hsl(42,80%,45%)">حفظ</button>
           </div>
         </div>
       </div>
@@ -89,12 +112,48 @@ export class EventsComponent {
   ds = inject(DataService);
   router = inject(Router);
   showDialog = signal(false);
-  form = { name:'', nameAr:'', location:'', client:'', startDate:'', endDate:'', status:'upcoming' as 'active'|'completed'|'upcoming' };
+
+  form: {
+    name: string;
+    nameAr: string;
+    location: string;
+    client: string;
+    startDate: string;
+    endDate: string;
+    status: 'active' | 'completed' | 'upcoming';
+    managerId: string;
+    managerName: string;
+  } = this.emptyForm();
+
+  emptyForm() {
+    return { name: '', nameAr: '', location: '', client: '', startDate: '', endDate: '', status: 'upcoming' as const, managerId: '', managerName: '' };
+  }
+
+  onManagerChange(event: Event) {
+    const selectedId = (event.target as HTMLSelectElement).value;
+    const emp = this.ds.employees().find(e => e.id === selectedId);
+    this.form.managerId = emp?.id ?? '';
+    this.form.managerName = emp?.nameAr ?? '';
+  }
 
   async submit() {
     if (!this.form.name || !this.form.nameAr) return;
-    await this.ds.addEvent(this.form);
+    await this.ds.addEvent({
+      name: this.form.name,
+      nameAr: this.form.nameAr,
+      location: this.form.location,
+      client: this.form.client,
+      startDate: this.form.startDate,
+      endDate: this.form.endDate,
+      status: this.form.status,
+      managerId: this.form.managerId || undefined,
+      managerName: this.form.managerName || undefined,
+    });
+    this.closeDialog();
+  }
+
+  closeDialog() {
     this.showDialog.set(false);
-    this.form = { name:'', nameAr:'', location:'', client:'', startDate:'', endDate:'', status:'upcoming' };
+    this.form = this.emptyForm();
   }
 }
