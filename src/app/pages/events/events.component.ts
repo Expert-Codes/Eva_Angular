@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DataService } from '../../services/data.service';
+import { LangService } from '../../services/lang.service';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ServiceBadgeComponent } from '../../components/service-badge/service-badge.component';
 import { EventData } from '../../models/data.models';
@@ -15,13 +16,13 @@ import { EventData } from '../../models/data.models';
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-cairo font-bold">الفعاليات</h1>
-          <p class="text-gray-500 text-sm mt-1">اضغط على الفعالية لعرض الموظفين وتقييمهم</p>
+          <h1 class="text-2xl font-cairo font-bold">{{ lang.t('الفعاليات', 'Events') }}</h1>
+          <p class="text-gray-500 text-sm mt-1">{{ lang.t('اضغط على الفعالية لعرض الموظفين وتقييمهم', 'Click an event to view staff and evaluations') }}</p>
         </div>
         <button (click)="openAdd()"
                 class="px-4 py-2 rounded-lg text-sm font-cairo font-semibold text-white"
                 style="background:hsl(42,80%,45%)">
-          + إضافة فعالية
+          + {{ lang.t('إضافة فعالية', 'Add Event') }}
         </button>
       </div>
 
@@ -30,25 +31,25 @@ import { EventData } from '../../models/data.models';
         @for (event of ds.events(); track event.id) {
           <div class="card-glass rounded-xl p-5 animate-fade-in">
             <div class="flex items-start justify-between mb-2">
-              <!-- Click area navigates to detail -->
               <div class="flex items-center gap-3 cursor-pointer flex-1"
                    (click)="router.navigate(['/events', event.id])">
-                <h2 class="font-cairo font-bold text-lg hover:underline">{{ event.nameAr }}</h2>
+                <h2 class="font-cairo font-bold text-lg hover:underline">{{ lang.isAr ? event.nameAr : event.name }}</h2>
                 <app-status-badge [status]="event.status"/>
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 @if (event.client) {
                   <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-md">{{ event.client }}</span>
                 }
-                <button (click)="openEdit(event)" title="تعديل"
-                        class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-sm">✏️</button>
+                <button (click)="openEdit(event)"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                        [title]="lang.t('تعديل', 'Edit')">✏️</button>
               </div>
             </div>
 
             @if (event.managerName) {
               <p class="text-sm text-gray-500 mb-2 font-cairo cursor-pointer"
                  (click)="router.navigate(['/events', event.id])">
-                👤 مدير الفعالية: <span class="text-gray-800 font-medium">{{ event.managerName }}</span>
+                👤 {{ lang.t('مدير الفعالية', 'Event Manager') }}: <span class="text-gray-800 font-medium">{{ event.managerName }}</span>
               </p>
             }
             @if (event.location || event.startDate) {
@@ -61,13 +62,15 @@ import { EventData } from '../../models/data.models';
             @if (event.services.length) {
               <div class="border-t border-gray-100 pt-3 cursor-pointer"
                    (click)="router.navigate(['/events', event.id])">
-                <p class="font-cairo font-semibold text-sm mb-2 text-gray-600">الخدمات ({{ event.services.length }})</p>
+                <p class="font-cairo font-semibold text-sm mb-2 text-gray-600">
+                  {{ lang.t('الخدمات', 'Services') }} ({{ event.services.length }})
+                </p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   @for (s of event.services; track s.id) {
                     <div class="bg-gray-50 rounded-lg p-3 space-y-1">
                       <app-service-badge [type]="s.type"/>
-                      <p class="text-xs text-gray-400">مدير المشروع: <span class="text-gray-700">{{ s.projectManagerName }}</span></p>
-                      <p class="text-xs text-gray-400">عدد الموظفين: <span class="text-gray-700">{{ s.employeeIds.length }}</span></p>
+                      <p class="text-xs text-gray-400">{{ lang.t('مدير المشروع', 'Project Manager') }}: <span class="text-gray-700">{{ s.projectManagerName }}</span></p>
+                      <p class="text-xs text-gray-400">{{ lang.t('عدد الموظفين', 'Staff Count') }}: <span class="text-gray-700">{{ s.employeeIds.length }}</span></p>
                     </div>
                   }
                 </div>
@@ -81,51 +84,53 @@ import { EventData } from '../../models/data.models';
     <!-- Add / Edit Event Dialog -->
     @if (showDialog()) {
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 space-y-4 my-4" dir="rtl">
-          <h2 class="font-cairo font-bold text-lg">{{ editingId() ? 'تعديل بيانات الفعالية' : 'إضافة فعالية جديدة' }}</h2>
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 space-y-4 my-4" [attr.dir]="lang.isAr ? 'rtl' : 'ltr'">
+          <h2 class="font-cairo font-bold text-lg">
+            {{ editingId() ? lang.t('تعديل بيانات الفعالية', 'Edit Event') : lang.t('إضافة فعالية جديدة', 'Add New Event') }}
+          </h2>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-500 font-cairo">اسم الفعالية <span class="text-red-400">*</span></label>
-            <input [(ngModel)]="form.nameAr" placeholder="مثال: موسم الرياض 2025" class="input-field w-full"/>
+            <label class="text-sm text-gray-500 font-cairo">{{ lang.t('اسم الفعالية', 'Event Name') }} <span class="text-red-400">*</span></label>
+            <input [(ngModel)]="form.nameAr" [placeholder]="lang.t('مثال: موسم الرياض 2025', 'e.g. Riyadh Season 2025')" class="input-field w-full"/>
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-500 font-cairo">الموقع</label>
-            <input [(ngModel)]="form.location" placeholder="مثال: الرياض" class="input-field w-full"/>
+            <label class="text-sm text-gray-500 font-cairo">{{ lang.t('الموقع', 'Location') }}</label>
+            <input [(ngModel)]="form.location" [placeholder]="lang.t('مثال: الرياض', 'e.g. Riyadh')" class="input-field w-full"/>
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-500 font-cairo">العميل</label>
-            <input [(ngModel)]="form.client" placeholder="مثال: الهيئة العامة للترفيه" class="input-field w-full"/>
+            <label class="text-sm text-gray-500 font-cairo">{{ lang.t('العميل', 'Client') }}</label>
+            <input [(ngModel)]="form.client" [placeholder]="lang.t('مثال: الهيئة العامة للترفيه', 'e.g. General Entertainment Authority')" class="input-field w-full"/>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1">
-              <label class="text-xs text-gray-500 font-cairo">تاريخ البدء</label>
+              <label class="text-xs text-gray-500 font-cairo">{{ lang.t('تاريخ البدء', 'Start Date') }}</label>
               <input [(ngModel)]="form.startDate" type="date" class="input-field w-full"/>
             </div>
             <div class="space-y-1">
-              <label class="text-xs text-gray-500 font-cairo">تاريخ الانتهاء</label>
+              <label class="text-xs text-gray-500 font-cairo">{{ lang.t('تاريخ الانتهاء', 'End Date') }}</label>
               <input [(ngModel)]="form.endDate" type="date" class="input-field w-full"/>
             </div>
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-500 font-cairo">الحالة</label>
+            <label class="text-sm text-gray-500 font-cairo">{{ lang.t('الحالة', 'Status') }}</label>
             <select [(ngModel)]="form.status" class="input-field w-full">
-              <option value="upcoming">قادم</option>
-              <option value="active">نشط</option>
-              <option value="completed">مكتمل</option>
+              <option value="upcoming">{{ lang.t('قادم', 'Upcoming') }}</option>
+              <option value="active">{{ lang.t('نشط', 'Active') }}</option>
+              <option value="completed">{{ lang.t('مكتمل', 'Completed') }}</option>
             </select>
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-500 font-cairo">مدير الفعالية</label>
+            <label class="text-sm text-gray-500 font-cairo">{{ lang.t('مدير الفعالية', 'Event Manager') }}</label>
             <select (change)="onManagerChange($event)" class="input-field w-full">
-              <option value="">-- بدون مدير --</option>
+              <option value="">-- {{ lang.t('بدون مدير', 'No manager') }} --</option>
               @for (emp of ds.employees(); track emp.id) {
                 <option [value]="emp.id" [selected]="emp.id === form.managerId">
-                  {{ emp.nameAr }} — {{ emp.role }}
+                  {{ lang.isAr ? emp.nameAr : emp.name }} — {{ emp.role }}
                 </option>
               }
             </select>
@@ -139,11 +144,13 @@ import { EventData } from '../../models/data.models';
           }
 
           <div class="flex gap-3 justify-end pt-1">
-            <button (click)="closeDialog()" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">إلغاء</button>
+            <button (click)="closeDialog()" class="px-4 py-2 text-sm border border-gray-200 rounded-lg font-cairo">
+              {{ lang.t('إلغاء', 'Cancel') }}
+            </button>
             <button (click)="submit()" [disabled]="!form.nameAr.trim() || saving()"
                     class="px-4 py-2 text-sm text-white rounded-lg font-cairo font-bold disabled:opacity-50"
                     style="background:hsl(42,80%,45%)">
-              {{ saving() ? 'جاري الحفظ...' : (editingId() ? 'حفظ التعديلات' : 'إضافة') }}
+              {{ saving() ? lang.t('جاري الحفظ...', 'Saving...') : (editingId() ? lang.t('حفظ التعديلات', 'Save Changes') : lang.t('إضافة', 'Add')) }}
             </button>
           </div>
         </div>
@@ -153,8 +160,9 @@ import { EventData } from '../../models/data.models';
   styles: [`.input-field { border:1px solid #e5e7eb; border-radius:0.5rem; padding:0.5rem 0.75rem; font-size:0.875rem; font-family:'Cairo',sans-serif; outline:none; width:100%; } .input-field:focus { border-color:hsl(42,80%,45%); }`]
 })
 export class EventsComponent {
-  ds = inject(DataService);
+  ds     = inject(DataService);
   router = inject(Router);
+  lang   = inject(LangService);
 
   showDialog = signal(false);
   editingId  = signal<string | null>(null);
@@ -203,7 +211,7 @@ export class EventsComponent {
       const id = this.editingId();
       if (id) {
         await this.ds.updateEvent(id, payload);
-        this.feedback.set('✓ تم حفظ التعديلات');
+        this.feedback.set(this.lang.t('✓ تم حفظ التعديلات', '✓ Changes saved'));
         this.feedbackOk.set(true);
         setTimeout(() => this.closeDialog(), 800);
       } else {
@@ -211,7 +219,7 @@ export class EventsComponent {
         this.closeDialog();
       }
     } catch {
-      this.feedback.set('حدث خطأ أثناء الحفظ');
+      this.feedback.set(this.lang.t('حدث خطأ أثناء الحفظ', 'Error saving changes'));
       this.feedbackOk.set(false);
     } finally {
       this.saving.set(false);
