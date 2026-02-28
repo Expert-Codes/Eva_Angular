@@ -278,11 +278,11 @@ interface EvalEntry {
                         <div class="py-3 border-b border-gray-100">
                           <p class="text-xs font-cairo text-gray-600 text-right mb-1">{{ criteriaLabels[key]?.ar }}</p>
                           <div class="flex items-center gap-0.5 justify-end">
-                            <span class="text-xs text-gray-400 font-mono me-1">({{ result.criteria[key] }}.0)</span>
+                            <span class="text-xs text-gray-400 font-mono me-1">({{ $any(result.criteria)[key] }}.0)</span>
                             @for (star of [1,2,3,4,5]; track star) {
                               <span class="text-xl leading-none"
-                                    [style]="star <= result.criteria[key] ? 'color:hsl(42,80%,45%)' : 'color:#d1d5db'">
-                                {{ star <= result.criteria[key] ? '★' : '☆' }}
+                                    [style]="star <= $any(result.criteria)[key] ? 'color:hsl(42,80%,45%)' : 'color:#d1d5db'">
+                                {{ star <= $any(result.criteria)[key] ? '★' : '☆' }}
                               </span>
                             }
                           </div>
