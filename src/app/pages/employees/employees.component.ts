@@ -64,21 +64,6 @@ import { Employee, ServiceType } from '../../models/data.models';
                 <span class="text-gray-400">{{ lang.t('الفعاليات المشارك فيها', 'Events Participated') }}</span>
                 <span class="font-bold" style="color:hsl(42,80%,45%)">{{ emp.totalEvents }}</span>
               </div>
-
-              <!-- Resend / Generate evaluation link — always visible -->
-              <button (click)="generateLink(emp)"
-                      class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-semibold transition-all"
-                      style="border-color:hsl(210,80%,55%); color:hsl(210,80%,45%)"
-                      [class.opacity-60]="sending() === emp.id"
-                      [disabled]="sending() === emp.id">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-                </svg>
-                <span class="font-cairo">
-                  {{ sending() === emp.id ? lang.t('جاري الإنشاء...', 'Generating...') : lang.t('رابط التقييم', 'Evaluation Link') }}
-                </span>
-              </button>
             </div>
           </div>
         }
@@ -133,45 +118,6 @@ import { Employee, ServiceType } from '../../models/data.models';
         </div>
       </div>
     }
-
-    <!-- Link Modal -->
-    @if (linkModal()) {
-      <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4" [attr.dir]="lang.isAr ? 'rtl' : 'ltr'">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl">✓</div>
-            <div>
-              <h3 class="font-cairo font-bold text-gray-800">{{ lang.t('رابط التقييم جاهز', 'Evaluation Link Ready') }}</h3>
-              <p class="text-xs text-gray-400">{{ lang.t('صالح لمدة 7 أيام', 'Valid for 7 days') }}</p>
-            </div>
-          </div>
-
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
-            <p class="text-xs text-gray-400 font-cairo">{{ lang.t('انسخ الرابط وأرسله للموظف', 'Copy and send this link to the employee') }}</p>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-blue-700 break-all flex-1 select-all font-mono bg-blue-50 p-2 rounded-lg">{{ linkModal() }}</span>
-              <button (click)="copyLink()" class="shrink-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
-                      [style]="copied() ? 'background:#16a34a;color:white' : 'background:hsl(42,80%,45%);color:white'">
-                {{ copied() ? lang.t('تم النسخ ✓', 'Copied ✓') : lang.t('نسخ', 'Copy') }}
-              </button>
-            </div>
-          </div>
-
-          @if (linkEmpHasEmail()) {
-            <p class="text-xs text-gray-400 font-cairo flex items-center gap-1">
-              <span>📧</span>
-              <span>{{ lang.t('تم إرسال الرابط أيضاً بالبريد الإلكتروني', 'The link was also sent by email') }}</span>
-            </p>
-          }
-
-          <button (click)="closeLinkModal()"
-                  class="w-full py-2 rounded-xl font-cairo font-semibold text-white text-sm"
-                  style="background:hsl(42,80%,45%)">
-            {{ lang.t('إغلاق', 'Close') }}
-          </button>
-        </div>
-      </div>
-    }
   `,
   styles: [`.input-field { border:1px solid #e5e7eb; border-radius:0.5rem; padding:0.5rem 0.75rem; font-size:0.875rem; font-family:'Cairo',sans-serif; outline:none; width:100%; } .input-field:focus { border-color:hsl(42,80%,45%); }`]
 })
@@ -182,12 +128,8 @@ export class EmployeesComponent {
   showDialog = signal(false);
   editingId  = signal<string | null>(null);
   saving     = signal(false);
-  sending    = signal<string | null>(null);
   feedback   = signal('');
   feedbackOk = signal(false);
-  linkModal  = signal<string | null>(null);
-  linkEmpHasEmail = signal(false);
-  copied     = signal(false);
 
   form = this.emptyForm();
 
@@ -237,33 +179,6 @@ export class EmployeesComponent {
       this.saving.set(false);
     }
   }
-
-  async generateLink(emp: Employee) {
-    this.sending.set(emp.id);
-    try {
-      const res = await this.ds.resendToken(emp.id);
-      const origin = window.location.origin;
-      const link = `${origin}/access/${res.token}`;
-      this.linkEmpHasEmail.set(!!emp.email);
-      this.linkModal.set(link);
-      this.copied.set(false);
-    } catch {
-      alert(this.lang.t('حدث خطأ أثناء إنشاء الرابط', 'Failed to generate link'));
-    } finally {
-      this.sending.set(null);
-    }
-  }
-
-  copyLink() {
-    const link = this.linkModal();
-    if (!link) return;
-    navigator.clipboard.writeText(link).then(() => {
-      this.copied.set(true);
-      setTimeout(() => this.copied.set(false), 2000);
-    });
-  }
-
-  closeLinkModal() { this.linkModal.set(null); }
 
   closeDialog() {
     this.showDialog.set(false);
