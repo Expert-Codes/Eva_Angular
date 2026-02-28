@@ -48,8 +48,8 @@ interface EvalEntry {
         <div class="flex items-center justify-center min-h-screen">
           <div class="bg-white rounded-2xl p-8 text-center shadow-lg max-w-sm w-full">
             <div class="text-6xl mb-4">✅</div>
-            <h2 class="font-bold text-gray-800 text-xl mb-2">تم إرسال التقييمات!</h2>
-            <p class="text-gray-400 text-sm">شكراً لك. تم تسجيل تقييماتك وانتهت صلاحية هذا الرابط.</p>
+            <h2 class="font-cairo font-bold text-gray-800 text-xl mb-2">تم إرسال التقييمات!</h2>
+            <p class="text-gray-400 text-sm font-cairo">شكراً لك. تم تسجيل تقييماتك وانتهت صلاحية هذا الرابط.</p>
           </div>
         </div>
       }
@@ -58,17 +58,17 @@ interface EvalEntry {
         <div class="max-w-3xl mx-auto space-y-5 py-6">
 
           <!-- Manager header -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm">
+          <div class="bg-white rounded-2xl p-5 shadow-sm" dir="rtl">
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl shrink-0"
                    style="background:hsl(42,80%,45%,0.12); color:hsl(42,80%,45%)">
                 {{ access()!.employee.avatar }}
               </div>
               <div>
-                <h1 class="font-bold text-lg text-gray-800">{{ access()!.employee.name || access()!.employee.nameAr }}</h1>
-                <p class="text-sm text-gray-400">{{ access()!.employee.role }}</p>
+                <h1 class="font-cairo font-bold text-lg text-gray-800">{{ access()!.employee.nameAr || access()!.employee.name }}</h1>
+                <p class="text-sm text-gray-400 font-cairo">{{ access()!.employee.role }}</p>
               </div>
-              <div class="ms-auto flex items-center gap-1.5">
+              <div class="me-auto flex items-center gap-1.5">
                 <span class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
                       [style]="phase() === 'select' ? 'background:hsl(42,80%,45%);color:white' : 'background:#e5e7eb;color:#6b7280'">1</span>
                 <div class="w-5 h-0.5 bg-gray-200"></div>
@@ -76,50 +76,75 @@ interface EvalEntry {
                       [style]="phase() !== 'select' ? 'background:hsl(42,80%,45%);color:white' : 'background:#e5e7eb;color:#6b7280'">2</span>
               </div>
             </div>
-            <p class="text-xs text-gray-400 mt-3">🕒 Expires: {{ access()!.expiresAt | date:'MMM d, y — HH:mm' }}</p>
+            <p class="text-xs text-gray-400 mt-3">🕒 {{ access()!.expiresAt | date:'MMM d, y — HH:mm' }}</p>
           </div>
 
-          <!-- ═══════════════════════════ -->
-          <!-- STEP 1 — Select team       -->
-          <!-- ═══════════════════════════ -->
+          <!-- ════════════════════════════════════════════════════════ -->
+          <!-- STEP 1 — Two-zone employee picker (matches screenshot)  -->
+          <!-- ════════════════════════════════════════════════════════ -->
           @if (phase() === 'select') {
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-100" style="background:hsl(42,80%,45%,0.04)">
-                <h2 class="font-bold text-gray-800">Step 1 — Select your team</h2>
-                <p class="text-sm text-gray-400 mt-0.5">Choose the employees you want to evaluate</p>
-              </div>
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden" dir="rtl">
 
-              <div class="divide-y divide-gray-50">
-                @for (emp of access()!.employees; track emp.id) {
-                  <label class="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors select-none">
-                    <input type="checkbox" [checked]="selected().has(emp.id)"
-                           (change)="toggleSelect(emp.id)"
-                           class="w-5 h-5 rounded cursor-pointer shrink-0 accent-yellow-600"/>
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
-                         style="background:hsl(42,80%,45%,0.12); color:hsl(42,80%,45%)">{{ emp.avatar }}</div>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-semibold text-gray-800 text-sm">{{ emp.name || emp.nameAr }}</p>
-                      <p class="text-xs text-gray-400">{{ emp.nameAr }}</p>
-                      <p class="text-xs text-gray-300 mt-0.5">{{ emp.role }}</p>
-                    </div>
-                    @if (selected().has(emp.id)) {
-                      <span class="text-green-500 text-lg shrink-0">✓</span>
+              <!-- ── Selected employees ── -->
+              <div class="px-5 pt-5 pb-3">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg leading-none">👥</span>
+                  <span class="font-cairo font-semibold text-gray-700 text-sm">الموظفون</span>
+                  <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center text-white"
+                        style="background:hsl(42,80%,45%)">{{ selected().size }}</span>
+                </div>
+
+                @if (selected().size === 0) {
+                  <p class="text-xs text-gray-300 font-cairo text-center py-4">لم يتم اختيار أي موظف بعد</p>
+                } @else {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    @for (emp of selectedEmployees(); track emp.id) {
+                      <div class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 hover:border-red-200 transition-colors group">
+                        <!-- × remove button on left (RTL: this is the end) -->
+                        <button (click)="toggleSelect(emp.id)"
+                                class="text-gray-300 hover:text-red-400 transition-colors font-bold text-base leading-none shrink-0 me-auto">×</button>
+                        <!-- Name + role -->
+                        <div class="text-right min-w-0">
+                          <p class="font-cairo font-semibold text-sm text-gray-800 truncate">{{ emp.nameAr || emp.name }}</p>
+                          <p class="font-cairo text-xs text-gray-400 truncate">{{ emp.role }}</p>
+                        </div>
+                        <!-- Avatar -->
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                             style="background:hsl(42,80%,45%,0.15); color:hsl(42,80%,45%)">{{ emp.avatar }}</div>
+                      </div>
                     }
-                  </label>
+                  </div>
                 }
               </div>
 
-              <div class="p-4 border-t border-gray-100 space-y-3">
-                <div class="flex items-center justify-between">
-                  <p class="text-sm text-gray-500">{{ selected().size }} of {{ access()!.employees.length }} selected</p>
-                  <button (click)="selectAll()" class="text-xs font-semibold" style="color:hsl(42,80%,45%)">
-                    {{ selected().size === access()!.employees.length ? 'Deselect All' : 'Select All' }}
-                  </button>
+              <div class="border-t border-gray-100 mx-5"></div>
+
+              <!-- ── Available employees ── -->
+              <div class="px-5 pt-3 pb-5">
+                <p class="font-cairo text-xs text-gray-400 mb-3">اختر موظفاً لإضافته</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  @for (emp of unselectedEmployees(); track emp.id) {
+                    <button (click)="toggleSelect(emp.id)"
+                            class="flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2.5 text-right hover:border-yellow-300 hover:bg-yellow-50/40 transition-colors w-full">
+                      <!-- Name + role -->
+                      <div class="text-right min-w-0 flex-1">
+                        <p class="font-cairo font-semibold text-sm text-gray-800 truncate">{{ emp.nameAr || emp.name }}</p>
+                        <p class="font-cairo text-xs text-gray-400 truncate">{{ emp.role }}</p>
+                      </div>
+                      <!-- Avatar -->
+                      <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                           style="background:hsl(42,80%,45%,0.1); color:hsl(42,80%,45%)">{{ emp.avatar }}</div>
+                    </button>
+                  }
                 </div>
+              </div>
+
+              <!-- Start button -->
+              <div class="px-5 pb-5">
                 <button (click)="startEvaluation()" [disabled]="selected().size === 0"
-                        class="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-40"
+                        class="w-full py-3 rounded-xl text-white font-cairo font-bold text-sm disabled:opacity-40"
                         style="background:hsl(42,80%,45%)">
-                  Start Evaluation ({{ selected().size }} {{ selected().size === 1 ? 'employee' : 'employees' }}) →
+                  بدء التقييم ({{ selected().size }} {{ selected().size === 1 ? 'موظف' : 'موظفين' }}) ←
                 </button>
               </div>
             </div>
@@ -130,19 +155,17 @@ interface EvalEntry {
           <!-- ═════════════════════════════════════════════ -->
           @if (phase() === 'evaluate' && currentEntry()) {
 
-            <!-- Progress -->
-            <div class="flex items-center justify-between">
-              <button (click)="phase.set('select')" class="text-sm text-gray-400 hover:text-gray-600">← Back</button>
-              <span class="text-sm font-semibold text-gray-600">{{ currentIndex() + 1 }} / {{ evalEntries().length }}</span>
+            <div class="flex items-center justify-between" dir="rtl">
+              <button (click)="phase.set('select')" class="text-sm text-gray-400 hover:text-gray-600 font-cairo">→ رجوع</button>
+              <span class="text-sm font-semibold text-gray-600 font-cairo">{{ currentIndex() + 1 }} / {{ evalEntries().length }}</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-1.5">
               <div class="h-1.5 rounded-full transition-all duration-500" style="background:hsl(42,80%,45%)"
                    [style.width]="((currentIndex() + 1) / evalEntries().length * 100) + '%'"></div>
             </div>
 
-            <!-- Sheet card — matches screenshot layout -->
             <div class="bg-white rounded-2xl shadow-sm overflow-hidden" dir="rtl">
-              <!-- Title bar like the screenshot -->
+              <!-- Title bar -->
               <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <button (click)="prev()" class="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
                 <p class="font-cairo font-bold" style="color:hsl(42,80%,45%)">
@@ -150,16 +173,14 @@ interface EvalEntry {
                 </p>
               </div>
 
-              <!-- Criteria grid — 3 columns, RTL, same as screenshot -->
               <div class="p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-5">
+                <!-- Criteria star grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-0">
                   @for (key of criteriaKeys; track key) {
-                    <div class="space-y-1 py-3 border-b border-gray-100">
-                      <p class="text-sm font-cairo text-gray-700 text-right">{{ criteriaLabels[key]?.ar }}</p>
-                      <div class="flex items-center gap-1 flex-row-reverse justify-end">
-                        <!-- Score label -->
+                    <div class="py-4 border-b border-gray-100">
+                      <p class="text-sm font-cairo text-gray-700 text-right mb-1.5">{{ criteriaLabels[key]?.ar }}</p>
+                      <div class="flex items-center gap-1 justify-end">
                         <span class="text-xs text-gray-400 font-mono me-1">({{ currentEntry()!.form[key] }}.0)</span>
-                        <!-- 5 stars -->
                         @for (star of [1,2,3,4,5]; track star) {
                           <button type="button"
                                   (click)="setRating(key, star)"
@@ -173,24 +194,21 @@ interface EvalEntry {
                   }
                 </div>
 
-                <!-- Notes -->
                 <textarea [(ngModel)]="currentEntry()!.notes"
                           placeholder="ملاحظات (اختياري)..." rows="2" dir="rtl"
                           class="input-field w-full resize-none mt-5 font-cairo text-right"></textarea>
 
-                <!-- Overall -->
                 <div class="flex items-center justify-between py-3 px-4 rounded-xl mt-4"
                      style="background:hsl(42,80%,45%,0.06)">
                   <span class="text-2xl font-bold" style="color:hsl(42,80%,45%)">{{ getOverall(currentEntry()!.form) }} / 5</span>
                   <span class="text-sm font-cairo font-semibold text-gray-600">المتوسط العام</span>
                 </div>
 
-                <!-- Navigation buttons -->
                 <div class="flex gap-3 mt-5" dir="ltr">
                   @if (currentIndex() > 0) {
                     <button (click)="prev()"
-                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-                      ← Prev
+                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-cairo font-semibold text-gray-600 hover:bg-gray-50">
+                      ← السابق
                     </button>
                   }
                   <button (click)="saveAndNext()"
@@ -218,9 +236,9 @@ interface EvalEntry {
               <div class="divide-y divide-gray-50">
                 @for (entry of evalEntries(); track entry.employee.id) {
                   <div class="flex items-center justify-between px-5 py-3">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
                       <button (click)="goToEntry(evalEntries().indexOf(entry))"
-                              class="text-xs text-gray-400 hover:text-gray-700 underline" dir="ltr">Edit</button>
+                              class="text-xs text-gray-400 hover:text-gray-700 underline font-cairo" dir="ltr">تعديل</button>
                       <span class="font-bold text-xl" style="color:hsl(42,80%,45%)">{{ getOverall(entry.form) }}</span>
                       <span class="text-xs text-gray-300">/5</span>
                     </div>
@@ -229,15 +247,15 @@ interface EvalEntry {
                         <p class="font-cairo font-semibold text-sm text-gray-800">{{ entry.employee.nameAr || entry.employee.name }}</p>
                         <p class="text-xs text-gray-400 font-cairo">{{ entry.employee.role }}</p>
                       </div>
-                      <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                      <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
                            style="background:hsl(42,80%,45%,0.12); color:hsl(42,80%,45%)">{{ entry.employee.avatar }}</div>
                     </div>
                   </div>
                 }
               </div>
-              <div class="p-5 space-y-3" dir="ltr">
+              <div class="p-5 space-y-3">
                 @if (submitError()) {
-                  <p class="text-sm text-red-500">{{ submitError() }}</p>
+                  <p class="text-sm text-red-500 font-cairo">{{ submitError() }}</p>
                 }
                 <button (click)="submitAll()" [disabled]="submitting()"
                         class="w-full py-3 rounded-xl text-white font-cairo font-bold disabled:opacity-40"
@@ -278,6 +296,9 @@ export class EmployeeAccessComponent implements OnInit {
   currentEntry = computed(() => this.evalEntries()[this.currentIndex()] ?? null);
   savedCount   = computed(() => this.evalEntries().filter(e => e.saved).length);
 
+  selectedEmployees   = computed(() => (this.access()?.employees ?? []).filter(e => this.selected().has(e.id)));
+  unselectedEmployees = computed(() => (this.access()?.employees ?? []).filter(e => !this.selected().has(e.id)));
+
   ngOnInit() {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
     this.loadAccess();
@@ -300,12 +321,6 @@ export class EmployeeAccessComponent implements OnInit {
     const s = new Set(this.selected());
     s.has(id) ? s.delete(id) : s.add(id);
     this.selected.set(s);
-  }
-
-  selectAll() {
-    const all = this.access()!.employees;
-    if (this.selected().size === all.length) this.selected.set(new Set());
-    else this.selected.set(new Set(all.map(e => e.id)));
   }
 
   startEvaluation() {
