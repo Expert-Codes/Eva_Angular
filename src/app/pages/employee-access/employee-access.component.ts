@@ -316,7 +316,7 @@ export class EmployeeAccessComponent implements OnInit {
         if (service.projectManagerId !== data.employee.id) continue;
         for (const emp of data.employees) {
           if (!this.selected().has(emp.id)) continue;
-          if (!service.employeeIds.includes(emp.id)) continue;
+          // manager selected this employee regardless of pre-assigned list
           entries.push({
             employee: emp,
             eventId: event.id,
