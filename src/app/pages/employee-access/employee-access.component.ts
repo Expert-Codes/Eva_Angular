@@ -48,14 +48,14 @@ interface EvalEntry {
         <div class="flex items-center justify-center min-h-screen">
           <div class="bg-white rounded-2xl p-8 text-center shadow-lg max-w-sm w-full">
             <div class="text-6xl mb-4">✅</div>
-            <h2 class="font-bold text-gray-800 text-xl mb-2">Evaluations Submitted!</h2>
-            <p class="text-gray-400 text-sm">Thank you. Your evaluations have been recorded and this link has expired.</p>
+            <h2 class="font-bold text-gray-800 text-xl mb-2">تم إرسال التقييمات!</h2>
+            <p class="text-gray-400 text-sm">شكراً لك. تم تسجيل تقييماتك وانتهت صلاحية هذا الرابط.</p>
           </div>
         </div>
       }
 
       @if (access() && !loading() && !errorMsg() && !done()) {
-        <div class="max-w-2xl mx-auto space-y-5 py-6">
+        <div class="max-w-3xl mx-auto space-y-5 py-6">
 
           <!-- Manager header -->
           <div class="bg-white rounded-2xl p-5 shadow-sm">
@@ -125,123 +125,124 @@ interface EvalEntry {
             </div>
           }
 
-          <!-- ═════════════════════════════════════════ -->
-          <!-- STEP 2 — Evaluation sheet, one at a time -->
-          <!-- ═════════════════════════════════════════ -->
+          <!-- ═════════════════════════════════════════════ -->
+          <!-- STEP 2 — Star-rating sheet, one at a time    -->
+          <!-- ═════════════════════════════════════════════ -->
           @if (phase() === 'evaluate' && currentEntry()) {
+
+            <!-- Progress -->
             <div class="flex items-center justify-between">
               <button (click)="phase.set('select')" class="text-sm text-gray-400 hover:text-gray-600">← Back</button>
               <span class="text-sm font-semibold text-gray-600">{{ currentIndex() + 1 }} / {{ evalEntries().length }}</span>
             </div>
-
             <div class="w-full bg-gray-200 rounded-full h-1.5">
               <div class="h-1.5 rounded-full transition-all duration-500" style="background:hsl(42,80%,45%)"
                    [style.width]="((currentIndex() + 1) / evalEntries().length * 100) + '%'"></div>
             </div>
 
-            <!-- Evaluation sheet -->
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div class="p-5 border-b border-gray-100 flex items-center gap-4" style="background:hsl(42,80%,45%,0.04)">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0"
-                     style="background:hsl(42,80%,45%,0.15); color:hsl(42,80%,45%)">
-                  {{ currentEntry()!.employee.avatar }}
-                </div>
-                <div>
-                  <p class="font-bold text-gray-800 text-lg">{{ currentEntry()!.employee.name || currentEntry()!.employee.nameAr }}</p>
-                  <p class="text-sm text-gray-400">{{ currentEntry()!.employee.nameAr }} · {{ currentEntry()!.employee.role }}</p>
-                  @if (currentEntry()!.eventName) {
-                    <p class="text-xs text-gray-300 mt-0.5">{{ currentEntry()!.eventName }}</p>
-                  }
-                </div>
-                @if (currentEntry()!.saved) {
-                  <span class="ms-auto text-green-600 font-bold text-sm bg-green-50 px-3 py-1 rounded-full">✓ Saved</span>
-                }
+            <!-- Sheet card — matches screenshot layout -->
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden" dir="rtl">
+              <!-- Title bar like the screenshot -->
+              <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <button (click)="prev()" class="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
+                <p class="font-cairo font-bold" style="color:hsl(42,80%,45%)">
+                  تقييم: {{ currentEntry()!.employee.nameAr || currentEntry()!.employee.name }}
+                </p>
               </div>
 
-              <div class="p-5 space-y-5">
-                <!-- Same criteria grid as admin evaluation sheet -->
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <!-- Criteria grid — 3 columns, RTL, same as screenshot -->
+              <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-5">
                   @for (key of criteriaKeys; track key) {
-                    <div class="space-y-1">
-                      <label class="text-xs font-semibold text-gray-600">{{ criteriaLabels[key]?.en }}</label>
-                      <p class="text-[10px] text-gray-400 leading-tight">{{ criteriaLabels[key]?.ar }}</p>
-                      <input type="number" min="1" max="5"
-                             [(ngModel)]="currentEntry()!.form[key]"
-                             class="input-field w-full text-center font-bold text-base"/>
+                    <div class="space-y-1 py-3 border-b border-gray-100">
+                      <p class="text-sm font-cairo text-gray-700 text-right">{{ criteriaLabels[key]?.ar }}</p>
+                      <div class="flex items-center gap-1 flex-row-reverse justify-end">
+                        <!-- Score label -->
+                        <span class="text-xs text-gray-400 font-mono me-1">({{ currentEntry()!.form[key] }}.0)</span>
+                        <!-- 5 stars -->
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <button type="button"
+                                  (click)="setRating(key, star)"
+                                  class="text-2xl leading-none transition-transform hover:scale-110 focus:outline-none"
+                                  [style]="star <= currentEntry()!.form[key] ? 'color:hsl(42,80%,45%)' : 'color:#d1d5db'">
+                            {{ star <= currentEntry()!.form[key] ? '★' : '☆' }}
+                          </button>
+                        }
+                      </div>
                     </div>
                   }
                 </div>
 
-                <!-- Overall preview -->
-                <div class="flex items-center justify-between py-3 px-4 rounded-xl"
+                <!-- Notes -->
+                <textarea [(ngModel)]="currentEntry()!.notes"
+                          placeholder="ملاحظات (اختياري)..." rows="2" dir="rtl"
+                          class="input-field w-full resize-none mt-5 font-cairo text-right"></textarea>
+
+                <!-- Overall -->
+                <div class="flex items-center justify-between py-3 px-4 rounded-xl mt-4"
                      style="background:hsl(42,80%,45%,0.06)">
-                  <span class="text-sm font-semibold text-gray-600">Overall Rating</span>
-                  <span class="text-2xl font-bold" style="color:hsl(42,80%,45%)">
-                    {{ getOverall(currentEntry()!.form) }} / 5
-                  </span>
+                  <span class="text-2xl font-bold" style="color:hsl(42,80%,45%)">{{ getOverall(currentEntry()!.form) }} / 5</span>
+                  <span class="text-sm font-cairo font-semibold text-gray-600">المتوسط العام</span>
                 </div>
 
-                <textarea [(ngModel)]="currentEntry()!.notes"
-                          placeholder="Notes (optional)..." rows="2"
-                          class="input-field w-full resize-none"></textarea>
-
-                <div class="flex gap-3">
+                <!-- Navigation buttons -->
+                <div class="flex gap-3 mt-5" dir="ltr">
                   @if (currentIndex() > 0) {
                     <button (click)="prev()"
-                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600">
+                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
                       ← Prev
                     </button>
                   }
                   <button (click)="saveAndNext()"
-                          class="flex-1 py-2.5 rounded-xl text-white font-bold text-sm"
+                          class="flex-1 py-2.5 rounded-xl text-white font-cairo font-bold text-sm"
                           [style]="currentEntry()!.saved ? 'background:hsl(150,60%,40%)' : 'background:hsl(42,80%,45%)'">
-                    @if (currentEntry()!.saved && currentIndex() < evalEntries().length - 1) { Next → }
-                    @else if (currentEntry()!.saved && currentIndex() === evalEntries().length - 1) { Go to Submit }
-                    @else if (currentIndex() < evalEntries().length - 1) { Save & Next → }
-                    @else { Save & Finish }
+                    @if (currentEntry()!.saved && currentIndex() < evalEntries().length - 1) { التالي → }
+                    @else if (currentEntry()!.saved && currentIndex() === evalEntries().length - 1) { الانتقال للإرسال }
+                    @else if (currentIndex() < evalEntries().length - 1) { حفظ والتالي → }
+                    @else { حفظ وإنهاء }
                   </button>
                 </div>
               </div>
             </div>
           }
 
-          <!-- ══════════════════ -->
-          <!-- STEP 3 — Submit   -->
-          <!-- ══════════════════ -->
+          <!-- ══════════════════════════ -->
+          <!-- STEP 3 — Review & Submit   -->
+          <!-- ══════════════════════════ -->
           @if (phase() === 'submit') {
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden" dir="rtl">
               <div class="p-5 border-b border-gray-100" style="background:hsl(42,80%,45%,0.04)">
-                <h2 class="font-bold text-gray-800">Review & Submit</h2>
-                <p class="text-sm text-gray-400 mt-0.5">{{ savedCount() }} evaluation(s) ready</p>
+                <h2 class="font-cairo font-bold text-gray-800">مراجعة وإرسال</h2>
+                <p class="text-sm font-cairo text-gray-400 mt-0.5">{{ savedCount() }} تقييم جاهز للإرسال</p>
               </div>
               <div class="divide-y divide-gray-50">
                 @for (entry of evalEntries(); track entry.employee.id) {
                   <div class="flex items-center justify-between px-5 py-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
-                           style="background:hsl(42,80%,45%,0.12); color:hsl(42,80%,45%)">{{ entry.employee.avatar }}</div>
-                      <div>
-                        <p class="font-semibold text-sm text-gray-800">{{ entry.employee.name || entry.employee.nameAr }}</p>
-                        <p class="text-xs text-gray-400">{{ entry.employee.role }}</p>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
+                      <button (click)="goToEntry(evalEntries().indexOf(entry))"
+                              class="text-xs text-gray-400 hover:text-gray-700 underline" dir="ltr">Edit</button>
                       <span class="font-bold text-xl" style="color:hsl(42,80%,45%)">{{ getOverall(entry.form) }}</span>
                       <span class="text-xs text-gray-300">/5</span>
-                      <button (click)="goToEntry(evalEntries().indexOf(entry))"
-                              class="text-xs text-gray-400 hover:text-gray-700 underline ms-3">Edit</button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div>
+                        <p class="font-cairo font-semibold text-sm text-gray-800">{{ entry.employee.nameAr || entry.employee.name }}</p>
+                        <p class="text-xs text-gray-400 font-cairo">{{ entry.employee.role }}</p>
+                      </div>
+                      <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                           style="background:hsl(42,80%,45%,0.12); color:hsl(42,80%,45%)">{{ entry.employee.avatar }}</div>
                     </div>
                   </div>
                 }
               </div>
-              <div class="p-5 space-y-3">
+              <div class="p-5 space-y-3" dir="ltr">
                 @if (submitError()) {
                   <p class="text-sm text-red-500">{{ submitError() }}</p>
                 }
                 <button (click)="submitAll()" [disabled]="submitting()"
-                        class="w-full py-3 rounded-xl text-white font-bold disabled:opacity-40"
+                        class="w-full py-3 rounded-xl text-white font-cairo font-bold disabled:opacity-40"
                         style="background:hsl(210,80%,50%)">
-                  {{ submitting() ? 'Submitting...' : 'Submit All & Close Session' }}
+                  {{ submitting() ? 'جاري الإرسال...' : 'إرسال جميع التقييمات وإغلاق الجلسة' }}
                 </button>
               </div>
             </div>
@@ -334,7 +335,14 @@ export class EmployeeAccessComponent implements OnInit {
   }
 
   defaultForm(): Record<string, number> {
-    return Object.fromEntries(this.criteriaKeys.map(k => [k, 4]));
+    return Object.fromEntries(this.criteriaKeys.map(k => [k, 3]));
+  }
+
+  setRating(key: string, value: number) {
+    const entry = this.currentEntry();
+    if (!entry) return;
+    entry.form[key] = value;
+    this.evalEntries.set([...this.evalEntries()]);
   }
 
   getOverall(form: Record<string, number>): number {
