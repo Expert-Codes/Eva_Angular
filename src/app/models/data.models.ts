@@ -21,20 +21,32 @@ export const SERVICE_LABELS_AR: Record<ServiceType, string> = {
   international_security: 'الأمن الدولي',
 };
 
+export const SERVICE_LABELS_EN: Record<ServiceType, string> = {
+  security_management: 'Security Management',
+  crowd_management: 'Crowd Management',
+  traffic_management: 'Traffic Management',
+  parking_access: 'Parking & Access',
+  transportation: 'Transportation',
+  government_liaison: 'Government Liaison',
+  vip_transportation: 'VIP Transportation',
+  close_protection: 'Close Protection',
+  international_security: 'International Security',
+};
+
 export const CRITERIA_LABELS: Record<string, { en: string; ar: string }> = {
-  creativity: { en: 'Creativity', ar: 'الابداع والابتكار في العمل' },
-  workQuality: { en: 'Work Quality', ar: 'إنجاز العمل بالمستوى المطلوب' },
-  teamwork: { en: 'Teamwork', ar: 'التعاون والعمل بروح الفريق' },
-  efficiency: { en: 'Efficiency', ar: 'الكفاءة' },
-  accuracy: { en: 'Accuracy', ar: 'جودة ودقة العمل' },
-  punctuality: { en: 'Punctuality', ar: 'الالتزام بمواعيد العمل' },
-  organization: { en: 'Organization', ar: 'الدقة والترتيب والتنظيم' },
-  planning: { en: 'Planning', ar: 'القدرة على التخطيط' },
-  independence: { en: 'Independence', ar: 'القدرة على العمل بدون إشراف' },
-  responsibility: { en: 'Responsibility', ar: 'القدرة على تحمل المسؤولية' },
-  leadership: { en: 'Leadership', ar: 'القيادة والمهارة في إدارة فرق العمل' },
-  appearance: { en: 'Appearance', ar: 'المظهر واللباس المناسب' },
-  assetCare: { en: 'Asset Care', ar: 'المحافظة على ممتلكات وعهد الشركة' },
+  creativity:     { en: 'Creativity',     ar: 'الابداع والابتكار في العمل' },
+  workQuality:    { en: 'Work Quality',   ar: 'إنجاز العمل بالمستوى المطلوب' },
+  teamwork:       { en: 'Teamwork',       ar: 'التعاون والعمل بروح الفريق' },
+  efficiency:     { en: 'Efficiency',     ar: 'الكفاءة' },
+  accuracy:       { en: 'Accuracy',       ar: 'جودة ودقة العمل' },
+  punctuality:    { en: 'Punctuality',    ar: 'الالتزام بمواعيد العمل' },
+  organization:   { en: 'Organization',  ar: 'الدقة والترتيب والتنظيم' },
+  planning:       { en: 'Planning',       ar: 'القدرة على التخطيط' },
+  independence:   { en: 'Independence',  ar: 'القدرة على العمل بدون إشراف' },
+  responsibility: { en: 'Responsibility',ar: 'القدرة على تحمل المسؤولية' },
+  leadership:     { en: 'Leadership',     ar: 'القيادة والمهارة في إدارة فرق العمل' },
+  appearance:     { en: 'Appearance',     ar: 'المظهر واللباس المناسب' },
+  assetCare:      { en: 'Asset Care',     ar: 'المحافظة على ممتلكات وعهد الشركة' },
 };
 
 export interface Employee {
@@ -108,5 +120,6 @@ export interface Evaluation {
 export interface TokenAccess {
   employee: Employee;
   events: EventData[];
+  employees: Employee[];
   expiresAt: string;
 }
